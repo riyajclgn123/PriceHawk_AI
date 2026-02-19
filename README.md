@@ -1,145 +1,127 @@
-🛒 PriceHawk AI
-AI-Powered Price Tracking & Forecasting Platform
+# 🛒 PriceHawk AI
+### AI-Powered Price Tracking & 7-Day Forecasting Platform
+
+PriceHawk is a full-stack AI-powered price intelligence system that tracks Amazon & Flipkart products, stores historical pricing data, predicts 7-day future price trends using machine learning, and notifies users when their target price is reached.
+
+Unlike traditional price trackers, PriceHawk predicts future prices using engineered time-series features and Gradient Boosting regression.
+
+---
+
+## 🚀 Live Architecture Overview
+
+Frontend (Next.js 15)  
+↕ REST API  
+Backend (FastAPI + ML Inference)  
+↕  
+Redis (Caching + Job Queue)  
+↕  
+PostgreSQL (Persistent Data Storage)
+
+---
+
+# ✨ Core Features
+
+## 🔎 Product Tracking
+- Paste Amazon or Flipkart product URL
+- Playwright-based scraping for JS-rendered pages
+- Automatic price normalization and storage
+- Historical price recording
+
+## 📊 Interactive Dashboard
+- Real-time price history chart (Recharts)
+- Lowest price tracking
+- Trend visualization
+- Product performance overview
+
+## 🤖 AI Price Prediction
+- 7-day future price prediction
+- Drop percentage estimation
+- High/Low confidence scoring
+- Feature-engineered regression model
+
+## 🔔 Smart Alerts
+- Target price alerts
+- Email notifications (Resend)
+- Background worker price checks
+- Redis-based job queue processing
+
+## ⚡ Performance Optimization
+- Redis caching (1-hour TTL)
+- Background scraping every 6 hours
+- Non-blocking API architecture
+- Scalable microservices design
+
+---
+
+# 🧠 Machine Learning System
+
+The ML pipeline uses:
+
+- Day of week
+- Day of month
+- Week of year
+- Rolling 3-day average
+- Rolling 7-day average
+- 1-day lag
+- 7-day lag
+- Price velocity (difference)
+- Current price
+
+Model:
+- GradientBoostingRegressor (scikit-learn)
+- StandardScaler preprocessing
+- Mean Absolute Error evaluation
+- Model serialized with joblib
+
+Prediction Output:
+- Current price
+- Predicted 7-day price
+- Drop percentage
+- Confidence level
+
+---
+
+# 🏗 Tech Stack
+
+## Frontend
+- Next.js 15 (App Router)
+- TypeScript
+- Plain CSS
+- Prisma ORM
+- Axios
+- Recharts
+- ioredis
+
+## Backend
+- FastAPI
+- Playwright
+- scikit-learn
+- pandas
+- numpy
+- RQ (Redis Queue)
+- BeautifulSoup
+- Resend Email API
 
-PriceHawk is a full-stack AI-powered price tracking application that scrapes Amazon & Flipkart product data, predicts future price movements using machine learning, and notifies users when their target price is reached.
+## Database & Infrastructure
+- PostgreSQL
+- Redis
+- Docker
+- Neon (Production DB)
+- Upstash (Production Redis)
 
-Unlike traditional price trackers, PriceHawk predicts 7-day future price trends using a trained regression model.
+---
 
-🚀 Why This Project Stands Out
+# 📂 Project Structure
 
-Real-world scraping using Playwright
-
-ML-based price prediction (not just alerts)
-
-Microservices architecture
-
-Redis caching + background workers
-
-Production-ready deployment design
-
-This project demonstrates:
-
-Full-stack engineering
-
-ML model training & inference
-
-System design
-
-Distributed job processing
-
-Real-world problem solving
-
-🏗 Architecture
-
-PriceHawk uses a microservices architecture:
-
-🖥 Frontend
-
-Next.js 15 (App Router)
-
-TypeScript
-
-Plain CSS
-
-Prisma ORM
-
-ioredis
-
-⚙ Backend
-
-FastAPI (Python)
-
-Playwright (scraping)
-
-scikit-learn (ML model)
-
-RQ (Redis Queue)
-
-Resend (email alerts)
-
-🗄 Infrastructure
-
-PostgreSQL
-
-Redis
-
-Docker
-
-🧠 Machine Learning Model
-
-The system trains a Gradient Boosting Regression model using:
-
-Day of week
-
-Day of month
-
-Rolling 3-day average
-
-Rolling 7-day average
-
-Price lag features
-
-Price velocity
-
-It predicts:
-
-Future 7-day average price
-
-Price drop percentage
-
-Drop confidence level
-
-✨ Features
-🔎 Product Tracking
-
-Paste Amazon or Flipkart URL
-
-Auto scrape product data
-
-Store historical prices
-
-📊 Interactive Dashboard
-
-Price history chart
-
-Lowest price tracking
-
-Trend indicators
-
-🤖 AI Price Prediction
-
-7-day forecast
-
-Drop likelihood
-
-Confidence estimation
-
-🔔 Smart Alerts
-
-Email notifications
-
-Target price triggers
-
-Background worker checks
-
-⚡ Performance Optimization
-
-Redis caching (1-hour TTL)
-
-Background scraping queue
-
-Scalable job workers
-
-📂 Folder Structure
 pricehawk-ai/
 │
-├── frontend/         # Next.js 15 App Router
+├── frontend/              # Next.js Application
 │   ├── app/
 │   ├── components/
 │   ├── prisma/
 │   └── lib/
 │
-├── backend/          # FastAPI + ML
+├── backend/               # FastAPI + ML Service
 │   ├── scraper/
 │   ├── ml/
 │   ├── jobs/
@@ -147,125 +129,123 @@ pricehawk-ai/
 │
 └── docker-compose.yml
 
-🛠 Tech Stack
-Frontend
+---
 
-Next.js 15
+# ⚙ Local Development Setup
 
-TypeScript
+## 1. Clone Repository
 
-Plain CSS
-
-Prisma ORM
-
-Axios
-
-Recharts
-
-Backend
-
-FastAPI
-
-Playwright
-
-scikit-learn
-
-pandas
-
-numpy
-
-RQ
-
-Redis
-
-Database
-
-PostgreSQL
-
-Infrastructure
-
-Docker
-
-Redis
-
-Neon (production)
-
-Upstash (production)
-
-⚙ Installation Guide
-1️⃣ Clone Repository
-git clone https://github.com/yourusername/pricehawk-ai.git
+git clone https://github.com/yourusername/pricehawk-ai.git  
 cd pricehawk-ai
 
-2️⃣ Start Infrastructure
+---
+
+## 2. Start Infrastructure
+
 docker compose up -d
 
-3️⃣ Setup Frontend
-cd frontend
-npm install
-npx prisma migrate dev
-npm run dev
+This starts:
+- PostgreSQL (port 5432)
+- Redis (port 6379)
 
+---
 
-Runs at:
+## 3. Setup Frontend
 
+cd frontend  
+npm install  
+npx prisma migrate dev  
+npm run dev  
+
+Frontend runs at:
 http://localhost:3000
 
-4️⃣ Setup Backend
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+---
 
+## 4. Setup Backend
 
-Runs at:
+cd backend  
+python -m venv venv  
+source venv/bin/activate  
+pip install -r requirements.txt  
+uvicorn main:app --reload --port 8000  
 
+Backend runs at:
 http://localhost:8000
 
-5️⃣ Run Worker
-rq worker scraping
+---
 
-🔐 Environment Variables
-Frontend .env.local
-DATABASE_URL=
-REDIS_URL=
-FASTAPI_URL=
-NEXTAUTH_SECRET=
+## 5. Start Background Worker
+
+cd backend  
+rq worker scraping  
+
+---
+
+# 🔐 Environment Variables
+
+## Frontend (.env.local)
+
+DATABASE_URL=  
+REDIS_URL=  
+FASTAPI_URL=  
+NEXTAUTH_SECRET=  
 RESEND_API_KEY=
 
-Backend .env
-REDIS_URL=
-DATABASE_URL=
-RESEND_API_KEY=
+## Backend (.env)
+
+REDIS_URL=  
+DATABASE_URL=  
+RESEND_API_KEY=  
 FROM_EMAIL=
 
-🚀 Deployment Strategy
-Service	Platform
-Frontend	Vercel
-Backend	Railway / Render
-Database	Neon
-Redis	Upstash
-📈 Resume-Ready Description
+---
 
-Built an AI-powered price tracking platform using Next.js and FastAPI that scrapes e-commerce websites and predicts 7-day price trends using Gradient Boosting regression. Designed a microservices architecture with Redis caching, background job processing, and PostgreSQL data persistence.
+# 🧩 System Design Highlights
 
-🧩 Future Improvements
+- Microservices architecture (Next.js + FastAPI)
+- REST-based communication
+- Shared Redis instance
+- Background job processing
+- Feature-engineered ML pipeline
+- Cache-first scraping logic
+- Clean database normalization via Prisma
 
-Browser extension
+---
 
-Push notifications
+# 📈 Resume-Ready Summary
 
-Multi-platform comparison mode
+Built a full-stack AI-powered price intelligence platform using Next.js and FastAPI that scrapes e-commerce platforms and predicts 7-day price movements using a Gradient Boosting regression model. Designed a scalable microservices architecture with Redis caching, PostgreSQL persistence, and background job workers.
 
-LLM-based price explanation
+---
 
-Public shareable price pages
+# 🚀 Deployment Strategy
 
-PDF export reports
+Frontend → Vercel  
+Backend → Railway / Render  
+Database → Neon  
+Redis → Upstash  
 
-🧑‍💻 Author
+---
 
-Riyaj Chaulagain
-Computer Science Student
-Full-Stack & ML Enthusiast
+# 🔮 Future Improvements
+
+- Browser extension for 1-click tracking
+- Push notifications (VAPID)
+- Cross-platform price comparison
+- Public shareable price pages
+- LLM-based price explanation engine
+- PDF export reports
+- Multi-region scraping support
+
+---
+
+# 👨‍💻 Author
+
+Riyaj Chaulagain  
+Computer Science Student  
+Full-Stack & Machine Learning Developer  
+
+---
+
+
