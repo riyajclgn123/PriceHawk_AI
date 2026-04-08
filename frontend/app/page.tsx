@@ -1,195 +1,251 @@
 import URLSubmitForm from "@/components/URLSubmitForm";
-
-export const metadata = {
-  title: "PriceHawk — Track Any Product Price",
-  description: "AI Powered Shopping Intelligence. Paste a product URL and track prices, predict drops, and get alerts.",
-};
+import Link from "next/link";
 
 export default function HomePage() {
   return (
     <>
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
+        .ph-hero-tag::before {
+          content: '';
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #00E5A0;
+          display: inline-block;
+          margin-right: 8px;
+          animation: ph-dot-pulse 2s infinite;
         }
-        .ph-feature-card {
+        @keyframes ph-dot-pulse {
+          0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+          50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,229,160,0); }
+        }
+        .ph-feat-card {
           background: #0D1720;
           border: 1px solid #1A2D3D;
           border-radius: 16px;
-          padding: 24px;
-          transition: all 0.25s;
+          padding: 28px;
+          transition: all 0.3s;
+          position: relative;
+          overflow: hidden;
         }
-        .ph-feature-card:hover {
-          border-color: rgba(0, 229, 160, 0.3);
+        .ph-feat-card::before {
+          content: '';
+          position: absolute; top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, #00E5A0, transparent);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+        .ph-feat-card:hover {
+          border-color: #1F3347;
           transform: translateY(-3px);
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+          background: #111E2A;
         }
-        .ph-stat {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
+        .ph-feat-card:hover::before { opacity: 1; }
+        .ph-pbadge {
+          padding: 4px 12px;
+          border: 1px solid #1A2D3D;
+          border-radius: 6px;
+          font-size: 11px;
+          font-family: 'DM Mono', monospace;
+          color: #4D6677;
+          cursor: pointer;
+          transition: all 0.15s;
+          background: transparent;
         }
+        .ph-pbadge:hover { border-color: #00E5A0; color: #00E5A0; }
+        .ph-url-input {
+          flex: 1;
+          background: #111E2A;
+          border: 1px solid #1F3347;
+          border-radius: 10px;
+          padding: 12px 16px;
+          color: #E8F1F8;
+          font-family: 'DM Mono', monospace;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .ph-url-input::placeholder { color: #4D6677; }
+        .ph-url-input:focus { border-color: #00E5A0; }
+        .ph-track-btn {
+          padding: 12px 24px;
+          background: #00E5A0;
+          color: #050A0F;
+          border: none;
+          border-radius: 10px;
+          font-family: 'Syne', sans-serif;
+          font-weight: 700;
+          font-size: 14px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+        .ph-track-btn:hover { background: #00ffc8; transform: translateY(-1px); }
       `}</style>
 
-      <div
+      {/* ── HERO ── */}
+      <section
         style={{
-          maxWidth: 820,
+          maxWidth: 860,
           margin: "0 auto",
-          padding: "80px 24px 80px",
+          padding: "100px 32px 60px",
           textAlign: "center",
         }}
       >
         {/* Badge */}
         <div
+          className="ph-hero-tag"
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            background: "rgba(0,229,160,0.08)",
-            border: "1px solid rgba(0,229,160,0.2)",
+            padding: "6px 14px",
+            border: "1px solid #1F3347",
             borderRadius: 100,
-            padding: "6px 18px",
-            marginBottom: 36,
+            fontSize: 12,
+            fontFamily: "'DM Mono', monospace",
+            color: "#00E5A0",
+            letterSpacing: "0.05em",
+            marginBottom: 32,
+            background: "rgba(0,229,160,0.05)",
           }}
         >
-          <span style={{ fontSize: 13 }}>🤖</span>
-          <span
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: 11,
-              color: "#00E5A0",
-              letterSpacing: "0.08em",
-            }}
-          >
-            AI-POWERED PRICE INTELLIGENCE
-          </span>
+          AI-Powered Price Intelligence
         </div>
 
-        {/* Headline */}
+        {/* Heading */}
         <h1
           style={{
             fontFamily: "'Syne', sans-serif",
-            fontSize: "clamp(36px, 6vw, 64px)",
+            fontSize: "clamp(42px, 7vw, 68px)",
             fontWeight: 800,
-            lineHeight: 1.08,
-            letterSpacing: "-1.5px",
+            lineHeight: 1.05,
+            letterSpacing: "-2px",
+            marginBottom: 24,
             color: "#E8F1F8",
-            marginBottom: 20,
           }}
         >
-          Never Overpay Again.
-          <br />
-          <span style={{ color: "#00E5A0" }}>Track. Predict. Save.</span>
+          Never Overpay for{" "}
+          <span
+            style={{
+              background: "linear-gradient(135deg, #00E5A0, #1A8FE3)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Anything
+          </span>{" "}
+          Again
         </h1>
 
         <p
           style={{
-            fontSize: 17,
+            fontSize: 18,
             color: "#8BA3B8",
-            lineHeight: 1.7,
             maxWidth: 540,
-            margin: "0 auto 52px",
-            fontFamily: "'Instrument Sans', sans-serif",
+            margin: "0 auto 48px",
+            lineHeight: 1.7,
           }}
         >
-          Paste any product link and PriceHawk monitors the price 24/7,
-          predicts future drops with ML, and alerts you at the perfect moment
-          to buy.
+          Paste any Amazon or Flipkart URL. Our ML model tracks prices, predicts
+          drops, and alerts you at the perfect moment to buy.
         </p>
 
         {/* URL Form */}
-        <div style={{ maxWidth: 680, margin: "0 auto 64px" }}>
-          <URLSubmitForm />
-        </div>
-
-        {/* Social proof stats */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 48,
-            marginBottom: 72,
+            maxWidth: 620,
+            margin: "0 auto",
+            background: "#0D1720",
+            border: "1px solid #1F3347",
+            borderRadius: 16,
+            padding: 28,
+            boxShadow: "0 0 60px rgba(0,229,160,0.06)",
           }}
         >
-          {[
-            { value: "24/7", label: "Monitoring" },
-            { value: "7-day", label: "ML Forecast" },
-            { value: "instant", label: "Alerts" },
-          ].map((s) => (
-            <div key={s.label} className="ph-stat">
-              <span
-                style={{
-                  fontFamily: "'Syne', sans-serif",
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: "#00E5A0",
-                  letterSpacing: "-0.5px",
-                }}
-              >
-                {s.value}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: 11,
-                  color: "#4D6677",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase" as const,
-                }}
-              >
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
+          <div
+            style={{
+              fontSize: 11,
+              fontFamily: "'DM Mono', monospace",
+              color: "#4D6677",
+              letterSpacing: "0.08em",
+              marginBottom: 10,
+              textAlign: "left",
+            }}
+          >
+            PASTE PRODUCT URL
+          </div>
 
-        {/* Feature cards */}
+          {/* URLSubmitForm replaces the input row */}
+          <URLSubmitForm />
+
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap" as const,
+              marginTop: 14,
+            }}
+          >
+            {["🛒 Amazon.in", "🛍️ Flipkart", "🌐 Amazon.com"].map((p) => (
+              <span key={p} className="ph-pbadge">
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section
+        style={{
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: "60px 32px 100px",
+        }}
+      >
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            textAlign: "left",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 20,
           }}
         >
           {[
             {
-              icon: "📉",
-              title: "Price History Charts",
-              desc: "Every price change logged and visualized with beautiful interactive charts.",
+              icon: "📡",
+              title: "Real-Time Tracking",
+              desc: "Prices scraped directly from Amazon, Flipkart, Shein & eBay. Always fresh, never stale.",
             },
             {
               icon: "🤖",
               title: "ML Price Prediction",
-              desc: "Gradient Boosting model forecasts price trends 7 days ahead with confidence scores.",
+              desc: "Gradient Boosting model forecasts price drops 7 days ahead with high accuracy.",
             },
             {
               icon: "🔔",
-              title: "Smart Alerts",
-              desc: "Set your target price and get notified the instant it drops to that level.",
+              title: "Instant Alerts",
+              desc: "Set a target price and get notified the moment your product hits it.",
             },
           ].map((f) => (
-            <div key={f.title} className="ph-feature-card">
+            <div key={f.title} className="ph-feat-card">
               <div style={{ fontSize: 28, marginBottom: 14 }}>{f.icon}</div>
-              <p
+              <h3
                 style={{
                   fontFamily: "'Syne', sans-serif",
-                  fontSize: 15,
                   fontWeight: 700,
+                  fontSize: 16,
                   color: "#E8F1F8",
                   marginBottom: 8,
                 }}
               >
                 {f.title}
-              </p>
+              </h3>
               <p
                 style={{
-                  fontFamily: "'Instrument Sans', sans-serif",
-                  fontSize: 13,
+                  fontSize: 14,
                   color: "#8BA3B8",
-                  lineHeight: 1.55,
+                  lineHeight: 1.65,
+                  fontFamily: "'Instrument Sans', sans-serif",
                 }}
               >
                 {f.desc}
@@ -197,7 +253,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </>
   );
 }
