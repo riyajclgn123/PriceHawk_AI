@@ -16,7 +16,7 @@ model Product {
   imageUrl     String?
   platform     String
   currentPrice Float
-  lowestPrice  Float?
+  lowestPrice  Float          @default(0)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   priceHistory PriceHistory[]
