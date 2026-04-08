@@ -7,42 +7,42 @@ export async function POST(req: NextRequest) {
     const { url } = await req.json();
 
     if (!url) {
+      return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    }
+
+    const fastApiUrl = process.env.FASTAPI_URL;
+    if (!fastApiUrl) {
       return NextResponse.json(
-        { error: "URL is required" },
-        { status: 400 }
+        { error: "FASTAPI_URL is not configured on the server." },
+        { status: 500 }
       );
     }
 
-    // Generate product ID from URL
-    const productId = Buffer.from(url).toString("base64").slice(0, 20);
-
     console.log("🔍 Scraping URL:", url);
 
-    // Call FastAPI scraper
     const scrapeResponse = await axios.post(
-      `${process.env.FASTAPI_URL}/scrape`,
-      {
-        url,
-        product_id: productId,
-      },
-      {
-        timeout: 30000, // 30 second timeout
-      }
+      `${fastApiUrl}/scrape`,
+      { url },
+      { timeout: 30000 }
     );
 
     const scraped = scrapeResponse.data;
     console.log("✅ Scraped data:", scraped);
 
-    // Upsert product in database
+    // Check if the product already exists to preserve lowestPrice correctly
+    const existing = await prisma.product.findUnique({ where: { url } });
+
+    const newLowest =
+      existing && existing.lowestPrice < scraped.price
+        ? existing.lowestPrice
+        : scraped.price;
+
     const product = await prisma.product.upsert({
       where: { url },
       update: {
         currentPrice: scraped.price,
+        lowestPrice: newLowest,
         updatedAt: new Date(),
-        // Update lowest price if current is lower
-        lowestPrice: {
-          set: scraped.price, // We'll fix this with a proper check
-        },
       },
       create: {
         url,
@@ -53,14 +53,6 @@ export async function POST(req: NextRequest) {
         lowestPrice: scraped.price,
       },
     });
-
-    // Update lowest price properly
-    if (scraped.price < product.lowestPrice) {
-      await prisma.product.update({
-        where: { id: product.id },
-        data: { lowestPrice: scraped.price },
-      });
-    }
 
     // Record price history
     await prisma.priceHistory.create({
@@ -77,28 +69,20 @@ export async function POST(req: NextRequest) {
       product,
       redirect: `/product/${product.id}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error in /api/track:", error);
 
-    // Check if it's an axios error
     if (axios.isAxiosError(error)) {
-      const backendError = error.response?.data;
-      console.error("Backend error:", backendError);
-
+      const detail = error.response?.data?.detail || error.message;
       return NextResponse.json(
-        {
-          error: "Failed to scrape product",
-          details: backendError?.detail || error.message,
-        },
+        { error: "Failed to scrape product", details: detail },
         { status: 500 }
       );
     }
 
+    const msg = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      {
-        error: "Failed to track product",
-        details: error.message,
-      },
+      { error: "Failed to track product", details: msg },
       { status: 500 }
     );
   }
