@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
-  provider = "postgresql"
-   url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
 }
 
 model Product {
@@ -14,7 +16,7 @@ model Product {
   imageUrl     String?
   platform     String
   currentPrice Float
-  lowestPrice  Float
+  lowestPrice  Float?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   priceHistory PriceHistory[]
