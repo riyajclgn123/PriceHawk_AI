@@ -55,12 +55,19 @@ export async function POST(req: NextRequest) {
     });
 
     // Update lowest price only if current price is lower
-    if (scraped.price < product.lowestPrice) {
+    if (scraped.price < (product.lowestPrice ?? Infinity)) {
       await prisma.product.update({
         where: { id: product.id },
         data: { lowestPrice: scraped.price },
       });
     }
+
+    if (product.lowestPrice === null || scraped.price < product.lowestPrice) {
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { lowestPrice: scraped.price },
+  });
+}
 
     // Record price history
     await prisma.priceHistory.create({
