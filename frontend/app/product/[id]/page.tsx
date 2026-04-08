@@ -1,12 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
-export default async function ProductPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+
+  if (isNaN(id)) {
+    return <p>Invalid product ID</p>;
+  }
 
   const product = await prisma.product.findUnique({
     where: { id },
@@ -208,7 +213,7 @@ export default async function ProductPage({
                   marginBottom: 8,
                 }}
               >
-                {product.platform.toUpperCase()}
+                {(product.platform ?? "UNKNOWN").toUpperCase()}
               </p>
 
               {/* Name */}
@@ -256,7 +261,7 @@ export default async function ProductPage({
                 rel="noopener noreferrer"
                 className="ph-view-btn"
               >
-                View on {product.platform} →
+                View on {product.platform ?? "Store"} →
               </a>
             </div>
 
