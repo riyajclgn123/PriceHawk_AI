@@ -7,14 +7,14 @@ interface Props {
 
 export default async function ProductPage({ params }: Props) {
   const { id: rawId } = await params;
-  const id = Number(rawId);
+  const productId = parseInt(rawId, 10);
 
-  if (isNaN(id)) {
+  if (isNaN(productId)) {
     return <p>Invalid product ID</p>;
   }
 
   const product = await prisma.product.findUnique({
-    where: { id },
+    where: { id: productId },
     include: {
       priceHistory: {
         orderBy: { scrapedAt: "asc" },
