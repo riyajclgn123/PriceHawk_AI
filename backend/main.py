@@ -1,237 +1,362 @@
+# # backend/main.py
+# from fastapi import FastAPI, HTTPException
+# from fastapi.middleware.cors import CORSMiddleware
+# from pydantic import BaseModel
+# from scraper.amazon import scrape_amazon
+# from scraper.flipkart import scrape_flipkart
+# import redis
+# import json
+# import os
+# from typing import Optional
+
+# app = FastAPI(title="PriceHawk API", version="1.0.0")
+
+# # CORS middleware
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["http://localhost:3000", "http://localhost:3001"],
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+#     allow_credentials=True,
+# )
+
+# # Redis connection
+# REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+# try:
+#     r = redis.from_url(REDIS_URL, decode_responses=True)
+#     r.ping()
+#     print("✅ Connected to Redis")
+# except Exception as e:
+#     print(f"⚠️  Redis connection failed: {e}")
+#     r = None
+
+
+# # ─── Request Models ─────────────────────────────────────────────────────
+# class ScrapeRequest(BaseModel):
+#     url: str
+#     product_id: str
+
+
+# class PredictRequest(BaseModel):
+#     price_history: list[dict]
+
+
+# class NotifyRequest(BaseModel):
+#     product_name: str
+#     email: str
+#     price: float
+
+
+# # ─── Endpoints ──────────────────────────────────────────────────────────
+# @app.get("/")
+# async def root():
+#     return {
+#         "app": "PriceHawk API",
+#         "version": "1.0.0",
+#         "status": "running"
+#     }
+
+
+# @app.get("/health")
+# async def health():
+#     redis_status = "connected" if r and r.ping() else "disconnected"
+#     return {
+#         "status": "ok",
+#         "redis": redis_status
+#     }
+
+
+# @app.post("/scrape")
+# async def scrape(req: ScrapeRequest):
+#     """
+#     Scrape current price from URL and cache it.
+#     Supports: Amazon, Flipkart, Shein, eBay
+#     """
+#     # Check cache first
+#     if r:
+#         cache_key = f"price:{req.product_id}"
+#         cached = r.get(cache_key)
+#         if cached:
+#             print(f"✅ Cache hit for {req.product_id}")
+#             return json.loads(cached)
+    
+#     url_lower = req.url.lower()
+    
+#     try:
+#         # Import scrapers
+#         from scraper.shein import scrape_shein
+#         from scraper.ebay import scrape_ebay
+        
+#         # Determine platform
+#         if any(domain in url_lower for domain in ["amazon.", "amzn.", "a.co"]):
+#             print(f"🛒 Amazon URL: {req.url}")
+#             data = await scrape_amazon(req.url)
+#         elif "flipkart" in url_lower:
+#             print(f"🛒 Flipkart URL: {req.url}")
+#             data = await scrape_flipkart(req.url)
+#         elif "shein" in url_lower:
+#             print(f"👗 Shein URL: {req.url}")
+#             data = await scrape_shein(req.url)
+#         elif "ebay" in url_lower:
+#             print(f"🏷️ eBay URL: {req.url}")
+#             data = await scrape_ebay(req.url)
+#         else:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail=f"Supported platforms: Amazon, Flipkart, Shein, eBay. Got: {req.url}"
+#             )
+        
+#         # Cache result
+#         if r:
+#             cache_key = f"price:{req.product_id}"
+#             r.setex(cache_key, 3600, json.dumps(data))
+#             print(f"✅ Cached: {req.product_id}")
+        
+#         return data
+        
+#     except ValueError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
+
+
+# @app.post("/predict")
+# async def predict(req: PredictRequest):
+#     """
+#     Run ML model to predict future price.
+#     Returns prediction or error if insufficient data.
+#     """
+#     if len(req.price_history) < 7:
+#         return {
+#             "error": "Need at least 7 days of history for prediction",
+#             "current_count": len(req.price_history)
+#         }
+    
+#     # Import ML prediction (we'll create this next)
+#     try:
+#         from ml.predict import predict_price_drop
+#         result = predict_price_drop(req.price_history)
+#         return result
+#     except ImportError:
+#         return {
+#             "error": "ML model not yet trained",
+#             "message": "Please train the model first using ml/train.py"
+#         }
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Prediction failed: {str(e)}"
+#         )
+
+
+# @app.post("/notify")
+# async def notify(req: NotifyRequest):
+#     """
+#     Send alert email when target price is reached.
+#     """
+#     try:
+#         from email_service import send_alert_email
+#         await send_alert_email(
+#             to=req.email,
+#             product_name=req.product_name,
+#             current_price=req.price,
+#             target_price=req.price
+#         )
+#         return {"sent": True}
+#     except ImportError:
+#         return {
+#             "error": "Email service not configured",
+#             "message": "Please set up Resend API key"
+#         }
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Email notification failed: {str(e)}"
+#         )
+
+
+# # Run with: uvicorn main:app --reload --port 8000
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
-import httpx
-from bs4 import BeautifulSoup
-import re
-import numpy as np
+import redis
+import json
+import os
+import random
 
-app = FastAPI(title="PriceHawk Scraper API", version="1.0.0")
+app = FastAPI(title="PriceHawk API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
-# ── Models ──────────────────────────────────────────────────────────────────
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+try:
+    r = redis.from_url(REDIS_URL, decode_responses=True)
+    r.ping()
+    print("✅ Connected to Redis")
+except Exception as e:
+    print(f"⚠️  Redis connection failed: {e}")
+    r = None
 
 class ScrapeRequest(BaseModel):
     url: str
-    product_id: Optional[str] = None
-
-class PricePoint(BaseModel):
-    price: float
-    scraped_at: str
+    product_id: str
 
 class PredictRequest(BaseModel):
-    price_history: List[PricePoint]
+    price_history: list[dict]
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-}
-
-
-def detect_platform(url: str) -> str:
-    u = url.lower()
-    if "amazon" in u:
-        return "Amazon"
-    if "flipkart" in u:
-        return "Flipkart"
-    if "ebay" in u:
-        return "eBay"
-    if "shein" in u:
-        return "Shein"
-    return "Unknown"
-
-
-def clean_price(text: str) -> float:
-    """Strip currency symbols / commas and return a float."""
-    cleaned = re.sub(r"[^\d.]", "", text.replace(",", ""))
-    try:
-        return float(cleaned)
-    except ValueError:
-        raise ValueError(f"Could not parse price from: '{text}'")
-
-
-# ── Platform scrapers ─────────────────────────────────────────────────────────
-
-async def scrape_amazon(url: str) -> dict:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=25, headers=HEADERS) as client:
-        r = await client.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-
-    name_el = soup.select_one("#productTitle")
-    name = name_el.get_text(strip=True) if name_el else "Unknown Product"
-
-    price_el = (
-        soup.select_one(".a-price .a-offscreen")
-        or soup.select_one("#priceblock_ourprice")
-        or soup.select_one("#priceblock_dealprice")
-        or soup.select_one(".a-price-whole")
-        or soup.select_one("span.priceToPay .a-offscreen")
-    )
-    price = clean_price(price_el.get_text(strip=True)) if price_el else 0.0
-
-    img_el = soup.select_one("#landingImage") or soup.select_one("#imgBlkFront")
-    image_url = None
-    if img_el:
-        image_url = img_el.get("src") or img_el.get("data-src") or img_el.get("data-old-hires")
-
-    return {"name": name, "price": price, "image_url": image_url, "platform": "Amazon"}
-
-
-async def scrape_flipkart(url: str) -> dict:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=25, headers=HEADERS) as client:
-        r = await client.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-
-    name_el = (
-        soup.select_one("span.VU-ZEz")
-        or soup.select_one("span.B_NuCI")
-        or soup.select_one("h1.yhB1nd")
-        or soup.select_one("h1")
-    )
-    name = name_el.get_text(strip=True) if name_el else "Unknown Product"
-
-    price_el = (
-        soup.select_one("div.Nx9bqj")
-        or soup.select_one("div._30jeq3")
-        or soup.select_one("div._16Jk6d")
-    )
-    price = clean_price(price_el.get_text(strip=True)) if price_el else 0.0
-
-    img_el = soup.select_one("img._396cs4") or soup.select_one("img.DByuf4") or soup.select_one("img._2r_T1I")
-    image_url = img_el.get("src") if img_el else None
-
-    return {"name": name, "price": price, "image_url": image_url, "platform": "Flipkart"}
-
-
-async def scrape_ebay(url: str) -> dict:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=25, headers=HEADERS) as client:
-        r = await client.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-
-    name_el = soup.select_one("h1.x-item-title__mainTitle span") or soup.select_one("h1#itemTitle")
-    name = name_el.get_text(strip=True) if name_el else "Unknown Product"
-    name = name.replace("Details about  \xa0", "")
-
-    price_el = (
-        soup.select_one(".x-price-primary span.ux-textspans")
-        or soup.select_one("span#prcIsum")
-        or soup.select_one("span#mm-saleDscPrc")
-    )
-    price = clean_price(price_el.get_text(strip=True)) if price_el else 0.0
-
-    img_el = soup.select_one("div.ux-image-carousel-item.active img") or soup.select_one("img#icImg")
-    image_url = None
-    if img_el:
-        image_url = img_el.get("src") or img_el.get("data-zoom-src")
-
-    return {"name": name, "price": price, "image_url": image_url, "platform": "eBay"}
-
-
-async def scrape_generic(url: str, platform: str) -> dict:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=25, headers=HEADERS) as client:
-        r = await client.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-
-    og_title = soup.select_one('meta[property="og:title"]')
-    og_image = soup.select_one('meta[property="og:image"]')
-    og_price = soup.select_one('meta[property="product:price:amount"]')
-
-    name = og_title.get("content", "Unknown Product") if og_title else "Unknown Product"
-    image_url = og_image.get("content") if og_image else None
-    price = float(og_price.get("content", 0)) if og_price else 0.0
-
-    return {"name": name, "price": price, "image_url": image_url, "platform": platform}
-
-
-# ── Routes ───────────────────────────────────────────────────────────────────
+class NotifyRequest(BaseModel):
+    product_name: str
+    email: str
+    price: float
 
 @app.get("/")
-def root():
-    return {"status": "ok", "service": "PriceHawk Scraper API v1"}
-
+async def root():
+    return {
+        "app": "PriceHawk API",
+        "version": "1.0.0",
+        "status": "running"
+    }
 
 @app.get("/health")
-def health():
-    return {"status": "healthy"}
+async def health():
+    redis_status = "connected" if r and r.ping() else "disconnected"
+    return {
+        "status": "ok",
+        "redis": redis_status
+    }
 
+def mock_scrape(url: str) -> dict:
+    """
+    Mock scraper - returns fake but realistic data.
+    Use this while fixing real scrapers.
+    """
+    url_lower = url.lower()
+    
+    # Determine platform
+    if any(d in url_lower for d in ["amazon", "amzn", "a.co"]):
+        platform = "Amazon"
+        base_price = random.uniform(20, 500)
+    elif "shein" in url_lower:
+        platform = "Shein"
+        base_price = random.uniform(10, 80)
+    elif "flipkart" in url_lower:
+        platform = "Flipkart"
+        base_price = random.uniform(500, 5000)
+    elif "ebay" in url_lower:
+        platform = "eBay"
+        base_price = random.uniform(15, 300)
+    else:
+        platform = "Unknown Store"
+        base_price = random.uniform(20, 200)
+    
+    # Generate mock data
+    product_names = [
+        "Wireless Bluetooth Headphones",
+        "Smart Watch Series 5",
+        "USB-C Fast Charging Cable",
+        "Portable Power Bank 20000mAh",
+        "Casual Cotton T-Shirt",
+        "Running Shoes Lightweight",
+        "Stainless Steel Water Bottle",
+        "LED Desk Lamp with USB Port",
+    ]
+    
+    return {
+        "name": f"{platform} - {random.choice(product_names)}",
+        "price": round(base_price, 2),
+        "currency": "USD" if platform != "Flipkart" else "INR",
+        "image_url": f"https://picsum.photos/400/400?random={random.randint(1,1000)}",
+        "platform": platform
+    }
 
 @app.post("/scrape")
 async def scrape(req: ScrapeRequest):
-    url = req.url
-    platform = detect_platform(url)
-
+    """
+    Scrape product - using MOCK data for now.
+    Change USE_MOCK to False when real scrapers work.
+    """
+    USE_MOCK = True  # Set to False to use real scrapers
+    
+    # Check cache
+    if r:
+        cache_key = f"price:{req.product_id}"
+        cached = r.get(cache_key)
+        if cached:
+            print(f"✅ Cache hit for {req.product_id}")
+            return json.loads(cached)
+    
     try:
-        if platform == "Amazon":
-            result = await scrape_amazon(url)
-        elif platform == "Flipkart":
-            result = await scrape_flipkart(url)
-        elif platform == "eBay":
-            result = await scrape_ebay(url)
+        if USE_MOCK:
+            print(f"🎭 MOCK: Scraping {req.url}")
+            data = mock_scrape(req.url)
         else:
-            result = await scrape_generic(url, platform)
+            # Real scraping (add when fixed)
+            url_lower = req.url.lower()
+            
+            if any(d in url_lower for d in ["amazon", "amzn", "a.co"]):
+                from scraper.amazon import scrape_amazon
+                data = await scrape_amazon(req.url)
+            elif "shein" in url_lower:
+                from scraper.shein import scrape_shein
+                data = await scrape_shein(req.url)
+            elif "flipkart" in url_lower:
+                from scraper.flipkart import scrape_flipkart
+                data = await scrape_flipkart(req.url)
+            elif "ebay" in url_lower:
+                from scraper.ebay import scrape_ebay
+                data = await scrape_ebay(req.url)
+            else:
+                raise HTTPException(400, "Unsupported platform")
+        
+        # Cache result
+        if r:
+            cache_key = f"price:{req.product_id}"
+            r.setex(cache_key, 3600, json.dumps(data))
+            print(f"✅ Cached: {req.product_id}")
+        
+        return data
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
-
-    if result["price"] <= 0:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                "Could not extract a valid price from this page. "
-                "The page may require JavaScript rendering or the layout may have changed."
-            ),
-        )
-
-    return result
-
+        print(f"❌ Scraping error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Scraping failed: {str(e)}")
 
 @app.post("/predict")
-def predict(req: PredictRequest):
-    prices = [p.price for p in req.price_history]
-
-    if len(prices) < 3:
+async def predict(req: PredictRequest):
+    if len(req.price_history) < 7:
         return {
-            "predicted_price": None,
-            "will_drop": False,
-            "drop_percentage": 0,
-            "confidence": "low",
+            "error": "Need at least 7 days of history for prediction",
+            "current_count": len(req.price_history)
         }
+    
+    try:
+        from ml.predict import predict_price_drop
+        result = predict_price_drop(req.price_history)
+        return result
+    except ImportError:
+        return {
+            "error": "ML model not yet trained",
+            "message": "Please train the model first"
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Prediction failed: {str(e)}")
 
-    n = len(prices)
-    x = np.arange(n, dtype=float)
-    coeffs = np.polyfit(x, prices, 1)
-    predicted = float(np.polyval(coeffs, n + 6))  # 7 steps ahead
+@app.post("/notify")
+async def notify(req: NotifyRequest):
+    return {"sent": True, "message": "Email notifications not yet configured"}
 
-    current = prices[-1]
-    # Cap the prediction — never predict more than 30% drop or 20% rise in 7 days
-    predicted = max(predicted, current * 0.70)
-    predicted = min(predicted, current * 1.20)
-    predicted = round(predicted, 2)
-
-    will_drop = predicted < current
-    pct_change = abs((predicted - current) / current * 100)
-    confidence: str = "high" if pct_change > 2 else "low"
-
-    return {
-        "predicted_price": predicted,
-        "will_drop": will_drop,
-        "drop_percentage": round(pct_change, 2),
-        "confidence": confidence,
-    }
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

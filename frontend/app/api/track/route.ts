@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import axios from "axios";
+import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,12 +42,15 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       },
       create: {
+        id: randomUUID(),
         url,
         name: scraped.name,
         imageUrl: scraped.image_url,
         platform: scraped.platform,
         currentPrice: scraped.price,
         lowestPrice: scraped.price,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
 
