@@ -163,7 +163,7 @@ export default async function ProductPage({
             alignItems: "start",
           }}
         >
-          {/* ── LEFT SIDEBAR ── */}
+          {/* LEFT SIDEBAR */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Product Info */}
             <div className="ph-detail-card" style={{ padding: 24 }}>
@@ -225,7 +225,7 @@ export default async function ProductPage({
                 {product.name}
               </h1>
 
-              {/* Price — refined size to match design system */}
+              {/* Price  */}
               <div
                 style={{
                   fontFamily: "'Syne', sans-serif",
@@ -444,7 +444,7 @@ export default async function ProductPage({
             </div>
           </div>
 
-          {/* ── RIGHT MAIN ── */}
+          {/*  RIGHT MAIN  */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Stats Row */}
             <div
